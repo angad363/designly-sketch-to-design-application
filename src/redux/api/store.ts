@@ -1,6 +1,5 @@
 import {combineReducers, configureStore, Middleware, ReducersMapObject} from '@reduxjs/toolkit'
-import middleware from '@/middleware'
-import {slices} from './slices'
+import {slices} from './slice'
 import { apis } from '.'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
