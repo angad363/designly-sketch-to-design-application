@@ -43,6 +43,7 @@ const schema = defineSchema({
 
   projects: defineTable({
     userId: v.id('users'),
+    name: v.string(),
     title: v.string(),
     description: v.optional(v.string()),
     styleGuide: v.optional(v.string()),
