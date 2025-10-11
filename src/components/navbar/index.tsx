@@ -10,6 +10,7 @@ import { CircleQuestionMark, HashIcon, LayoutTemplate, User } from 'lucide-react
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { useAppSelector } from '@/redux/api/store'
+import CreateProject from '../buttons/project'
 
 
 
@@ -110,8 +111,8 @@ const Navbar = () => {
                             <User className='size-5 text-black' />
                         </AvatarFallback>
                     </Avatar>
-                    {/* {hasCanvas && <Autosave />}
-                    {!hasCanvas && !hasStyleGuide && <CreateProject />} */}
+                    {/* {hasCanvas && <Autosave />}*/}
+                    {!hasCanvas && !hasStyleGuide && <CreateProject />}
             </div>
         </div>
     )
