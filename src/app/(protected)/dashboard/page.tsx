@@ -10,7 +10,7 @@ const Page = async () => {
     redirect(`/dashboard/${combinedSlug(profileName!)}`)
   }
 
-  // redirect(`/dashboard/${combinedSlug(profileName!)}`)
+  redirect(`/dashboard/${combinedSlug(profileName!)}`)
 }
 
 export default Page;
