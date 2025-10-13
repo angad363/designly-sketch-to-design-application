@@ -92,5 +92,6 @@ export const useProjectCreation = () => {
         isCreating: projectState.isCreating,
         createError: projectState.createError,
         canCreate: !!user !== null,
+        projects: projectState.projects || []
     }
 }

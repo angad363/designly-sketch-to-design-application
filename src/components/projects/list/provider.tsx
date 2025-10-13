@@ -1,0 +1,29 @@
+'use client';
+
+import { fetchProjectSuccess } from '@/redux/api/slice/projects'
+import { useAppDispatch } from '@/redux/api/store'
+import React, { useEffect } from 'react'
+
+type Props = {
+    children: React.ReactNode,
+    initialProjects: any
+}
+
+const ProjectsProvider = ({children, initialProjects}: Props) => {
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        if(initialProjects?._valueJSON) {
+            const projectsData = initialProjects._valueJSON
+            dispatch(
+                fetchProjectSuccess({
+                    projects: projectsData,
+                    total: projectsData.length,
+                })
+            )
+        }
+    })
+    return <>{children}</>
+}
+
+export default ProjectsProvider
