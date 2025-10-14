@@ -27,6 +27,7 @@ const Navbar = () => {
     const pathname = usePathname()
     const hasCanvas = pathname.includes('canvas')
     const hasStyleGuide = pathname.includes('style-guide')
+    const me = useAppSelector((state) => state.profile)
 
     const project = useQuery(
         api.projects.getProject,
@@ -36,18 +37,18 @@ const Navbar = () => {
     const tabs: TabsProps[] = [
         {
             label: "Canvas",
-            href: `/dashboard/canvas?project=${projectId}`,
+            href: `/dashboard/${me.name}/canvas?project=${projectId}`,
             icon: <HashIcon className="h-4 w-4" />
         },
         {
             label: "Style Guide",
-            href: `/dashboard/style-guide?project=${projectId}`,
+            href: `/dashboard/${me.name}/style-guide?project=${projectId}`,
             icon: <LayoutTemplate className='h-4 w-4' />
 
         }
     ]
 
-    const me = useAppSelector((state) => state.profile)
+
 
 
     return (
