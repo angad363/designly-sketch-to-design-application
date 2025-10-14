@@ -79,7 +79,7 @@ export const useMoodBoard = (guideImages: MoodBoardImage[]) => {
                 preview: img.url,
                 storageId: img.storageId,
                 uploaded: true,
-                uploading: true,
+                uploading: false,
                 url: img.url,
                 isFromServer: true,
             }))
@@ -132,35 +132,33 @@ export const useMoodBoard = (guideImages: MoodBoardImage[]) => {
 
     const removeImage = async (imageId: string) => {
         const imageToRemove = images.find((img) => img.id === imageId)
-        if(!imageToRemove)
-            return
+        if (!imageToRemove) return
 
-        if(!imageToRemove.isFromServer && imageToRemove.storageId && projectId) {
+        if (imageToRemove.storageId && projectId) {
             try {
-                await removeMoodBoardImage({
-                    projectId: projectId as Id<'projects'>,
-                    storageId: imageToRemove.storageId as Id<'_storage'>,
-                })
+            await removeMoodBoardImage({
+                projectId: projectId as Id<'projects'>,
+                storageId: imageToRemove.storageId as Id<'_storage'>,
+            })
             } catch (error) {
-                console.error(error)
-                toast.error('Failed to remove image from server')
-                return
+            console.error(error)
+            toast.error('Failed to remove image from server')
             }
         }
 
         const updatedImages = images.filter((img) => {
-            if(img.id === imageId) {
-                if(!img.isFromServer && img.preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(img.preview)
-                }
-                return false
+            if (img.id === imageId) {
+            if (!img.isFromServer && img.preview.startsWith('blob:')) {
+                URL.revokeObjectURL(img.preview)
+            }
+            return false
             }
             return true
         })
 
         setValue('images', updatedImages)
         toast.success('Image removed')
-    }
+        }
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
