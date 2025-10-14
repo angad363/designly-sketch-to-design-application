@@ -1,3 +1,4 @@
+import MoodBoard from '@/components/style/moodboard'
 import { ThemeContent } from '@/components/style/theme'
 import StyleGuideTypography from '@/components/style/typography'
 import { TabsContent } from '@/components/ui/tabs'
@@ -52,6 +53,10 @@ const Page = async ({searchParams}: Props) => {
       </TabsContent>
       <TabsContent value='typography'>
         <StyleGuideTypography typographyGuide={typographyGuide} />
+      </TabsContent>
+
+      <TabsContent value='moodboard'>
+        <MoodBoard guideImages={guideImages} />
       </TabsContent>
     </div>
   )
