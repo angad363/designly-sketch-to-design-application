@@ -43,26 +43,33 @@ export const useMoodBoard = (guideImages: MoodBoardImage[]) => {
     const uploadImage = async (
         file: File
     ): Promise<{storageId: string, url?: string}> => {
-        const uploadUrl = await generateUploadUrl()
+        try {
+            const uploadUrl = await generateUploadUrl()
 
-        const result = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {'Content-Type': file.type},
-            body: file
-        })
-
-        if(!result.ok) {
-            throw new Error(`Upload failed: ${result.statusText}`)
-        }
-
-        const {storageId} = await result.json()
-
-        if(projectId) {
-            await addMoodBoardImage({
-                projectId: projectId as Id<'projects'>,
-                storageId: storageId as Id<'_storage'>
+            const result = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {'Content-Type': file.type},
+                body: file
             })
+
+            if(!result.ok) {
+                throw new Error(`Upload failed: ${result.statusText}`)
+            }
+
+            const {storageId} = await result.json()
+
+            if(projectId) {
+                await addMoodBoardImage({
+                    projectId: projectId as Id<'projects'>,
+                    storageId: storageId as Id<'_storage'>
+                })
+            }
+            return {storageId}
+        } catch (error) {
+            console.error(error)
+            throw error
         }
+
     }
 
     useEffect(() => {
@@ -204,9 +211,37 @@ export const useMoodBoard = (guideImages: MoodBoardImage[]) => {
                     updatedImages[i] = {...image, uploading: true}
                     setValue('images', updatedImages)
                     try {
+                        const {storageId} = await uploadImage(image.file!)
+
+                        const finalImages = getValues('images')
+                        const finalIndex = finalImages.findIndex(
+                            (img) => img.id === image.id
+                        )
+                        if(finalIndex !== -1) {
+                            finalImages[finalIndex] = {
+                                ...finalImages[finalIndex],
+                                storageId,
+                                uploaded: true,
+                                uploading: false,
+                                isFromServer: true,
+                            }
+                            setValue('images', [...finalImages])
+                        }
 
                     } catch (error) {
-
+                        console.error(error)
+                        const errorImages = getValues('images')
+                        const errorIndex = errorImages.findIndex(
+                            (img) => img.id === image.id
+                        )
+                        if(errorIndex !== -1) {
+                            errorImages[errorIndex] = {
+                                ...errorImages[errorIndex],
+                                uploading: false,
+                                error: 'Upload failed',
+                            }
+                            setValue('images', [...errorImages])
+                        }
                     }
                 }
             }
@@ -215,5 +250,25 @@ export const useMoodBoard = (guideImages: MoodBoardImage[]) => {
         if(images.length > 0) {
             uploadPendingImages()
         }
-    }, [images])
+    }, [images, setValue, getValues])
+
+    useEffect(() => {
+        return () => {
+            images.forEach((image) => {
+                URL.revokeObjectURL(image.preview)
+            })
+        }
+    }, [])
+
+    return {
+        form,
+        images,
+        dragActive,
+        addImage,
+        removeImage,
+        handleDrag,
+        handleDrop,
+        handleFileInput,
+        canAddMore: images.length < 5,
+    }
 }
