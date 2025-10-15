@@ -1,7 +1,7 @@
 'use client';
 
 import { useProjectCreation } from '@/hooks/use-project';
-import { useAppSelector } from '@/redux/api/store';
+import { useAppSelector } from '@/redux/store';
 import { formatDistanceToNow } from 'date-fns';
 import { Plus } from 'lucide-react';
 import Image from 'next/image';

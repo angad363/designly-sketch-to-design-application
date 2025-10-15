@@ -1,7 +1,7 @@
 'use client';
 
-import { fetchProjectSuccess } from '@/redux/api/slice/projects'
-import { useAppDispatch } from '@/redux/api/store'
+import { fetchProjectSuccess } from '@/redux/slice/projects'
+import { useAppDispatch } from '@/redux/store'
 import React, { useEffect } from 'react'
 
 type Props = {

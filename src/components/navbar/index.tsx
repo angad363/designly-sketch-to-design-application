@@ -9,7 +9,7 @@ import { api } from '../../../convex/_generated/api'
 import { CircleQuestionMark, HashIcon, LayoutTemplate, User } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { useAppSelector } from '@/redux/api/store'
+import { useAppSelector } from '@/redux/store'
 import CreateProject from '../buttons/project'
 
 
