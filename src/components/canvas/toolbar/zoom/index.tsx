@@ -1,5 +1,7 @@
+'use client';
+
 import { Button } from '@/components/ui/button'
-import { useInfinityCanvas } from '@/hooks/user-canvas'
+import { useInfinityCanvas } from '@/hooks/use-canvas'
 import { setScale } from '@/redux/slice/viewport'
 import { Viewport } from '@radix-ui/react-navigation-menu'
 import { ZoomOut } from 'lucide-react'

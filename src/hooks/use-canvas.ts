@@ -104,6 +104,105 @@ export const useInfinityCanvas = () => {
     }
 
     type WithClientXY = {clientX: number; clientY: number}
+    const getLocalPointFromPt = (e: WithClientXY): Point => localPointFromClient(e.clientX, e.clientY)
 
+    const getShapesAtPoint = (worldPoint: Point): Shape | null => {
+        for(let i = shapeList.length - 1; i >= 0; i--) {
+            const shape = shapeList[i]
+            if(isPointInShape(worldPoint, shape)) {
+                return shape
+            }
+        }
+        return null
+    }
 
+    const isPointInShape = (point: Point, shape: Shape): boolean => {
+        switch(shape.type) {
+            case 'frame':
+            case 'rect':
+            case 'ellipse':
+            case 'generatedui':
+                return (
+                    point.x >= shape.x &&
+                    point.x <= shape.x + shape.w &&
+                    point.y >= shape.y &&
+                    point.y <= shape.y + shape.h
+                )
+            case 'freedraw':
+                const threshold = 5
+                for(let i = 0; i < shape.points.length - 1; i++) {
+                    const p1 = shape.points[i]
+                    const p2 = shape.points[i + 1]
+                    if(distanceToLineSegment(point, p1, p2) <= threshold) {
+                        return true
+                    }
+                }
+                return false
+
+            case 'arrow':
+            case 'line':
+                const lineThreshold = 8
+                return (
+                    distanceToLineSegment(
+                        point,
+                        {x: shape.startX, y: shape.startY},
+                        {x: shape.endX, y: shape.endY}
+                    ) <= lineThreshold
+                )
+            case 'text':
+                const textWidth = Math.max(
+                    shape.text.length * (shape.fontSize * 0.6),
+                    100
+                )
+
+                const textHeight = shape.fontSize * 1.2
+                const padding = 8
+
+                return (
+                    point.x >= shape.x - 2 &&
+                    point.x <= shape.x + textWidth + padding + 2 &&
+                    point.y >= shape.y - 2 &&
+                    point.y <= shape.y + textHeight + padding + 2
+                )
+
+            default:
+                return false
+        }
+    }
+
+    const distanceToLineSegment = (
+        point: Point,
+        lineStart: Point,
+        lineEnd: Point
+    ): number => {
+        const A = point.x - lineStart.x
+        const B = point.y - lineStart.y
+        const C = lineEnd.x - lineStart.x
+        const D = lineEnd.y - lineStart.y
+
+        const dot = A * C + B * D
+        const lenSq = C * C + D * D
+
+        let param = -1
+        if(lenSq !== 0)
+            param = dot / lenSq
+
+        let xx, yy
+
+        if(param < 0) {
+            xx = lineStart.x
+            yy = lineStart.y
+        } else if (param > 1) {
+            xx = lineEnd.x
+            yy = lineEnd.y
+        } else {
+            xx = lineStart.x + param * C
+            yy = lineStart.y + param * D
+        }
+
+        const dx = point.x - xx
+        const dy = point.y - yy
+
+        return Math.sqrt(dx * dx + dy * dy)
+    }
 }
