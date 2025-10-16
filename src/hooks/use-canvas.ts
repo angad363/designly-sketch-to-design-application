@@ -1,5 +1,5 @@
 import { Shape } from "@/redux/slice/shapes"
-import { Point } from "@/redux/slice/viewport"
+import { panMove, Point } from "@/redux/slice/viewport"
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import { useEffect, useRef, useState } from "react"
 import { useDispatch } from "react-redux"
@@ -8,6 +8,7 @@ interface TouchPointer {
     id: number
     p: Point
 }
+const RAF_INTERVAL_MS = 8
 
 interface DraftShape {
     type: 'frame' | 'rect' | 'ellipse' | 'arrow' | 'line'
@@ -205,4 +206,31 @@ export const useInfinityCanvas = () => {
 
         return Math.sqrt(dx * dx + dy * dy)
     }
+
+    const schedulePanMove = (p: Point) => {
+        pendingPanPointRef.current = p
+        if(panRafRef.current != null)
+            return
+        panRafRef.current = window.requestAnimationFrame(() => {
+            panRafRef.current = null
+            const next = pendingPanPointRef.current
+            if(next)
+                dispatch(panMove(next))
+        })
+    }
+
+    const freehandTick = (): void => {
+        const now = performance.now()
+        if(now - lastFreehandFrameRef.current >= RAF_INTERVAL_MS) {
+            if(freeDrawPointsRef.current.length > 0)
+                requestRender()
+            lastFreehandFrameRef.current = now
+        }
+
+        if(isDrawingRef.current) {
+            freehandRafRef.current = window.requestAnimationFrame(freehandTick)
+        }
+    }
+
+
 }

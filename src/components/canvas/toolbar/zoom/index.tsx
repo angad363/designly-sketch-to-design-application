@@ -11,7 +11,7 @@ type Props = {}
 
 const ZoomBar = (props: Props) => {
 
-    const {viewport, dispatch} = useInfinityCanvas()
+    const {viewport} = useInfinityCanvas()
 
 
     // TODO: Add zoom in and zoom out
