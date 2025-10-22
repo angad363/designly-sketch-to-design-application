@@ -1,7 +1,7 @@
 'use client';
 
 import { addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, clearSelection, removeShape, selectShape, setTool, Shape, updateShape } from "@/redux/slice/shapes"
-import { panMove, Point, wheelZoom, wheelPan, screenToWorld, panStart, panEnd } from "@/redux/slice/viewport"
+import { panMove, Point, wheelZoom, wheelPan, screenToWorld, panStart, panEnd, handToolDisable, handToolEnable } from "@/redux/slice/viewport"
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import { current } from "@reduxjs/toolkit";
 import React, { useEffect, useRef, useState } from "react"
@@ -577,5 +577,25 @@ export const useInfinityCanvas = () => {
         }
 
         finalizeDrawing()
+    }
+
+    const onPointerCancel: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        onPointerUp(e)
+    }
+
+    const onKeyDown = (e:KeyboardEvent): void => {
+        if((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) {
+            e.preventDefault()
+            isSpacePressed.current = true
+            dispatch(handToolEnable())
+        }
+    }
+
+    const onKeyUp = (e: KeyboardEvent): void => {
+        if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            e.preventDefault()
+            isSpacePressed.current = false
+            dispatch(handToolDisable())
+        }
     }
 }
