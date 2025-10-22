@@ -1,7 +1,7 @@
 'use client';
 
-import { addText, clearSelection, removeShape, selectShape, setTool, Shape, updateShape } from "@/redux/slice/shapes"
-import { panMove, Point, wheelZoom, wheelPan, screenToWorld, panStart } from "@/redux/slice/viewport"
+import { addArrow, addEllipse, addFrame, addFreeDrawShape, addLine, addRect, addText, clearSelection, removeShape, selectShape, setTool, Shape, updateShape } from "@/redux/slice/shapes"
+import { panMove, Point, wheelZoom, wheelPan, screenToWorld, panStart, panEnd } from "@/redux/slice/viewport"
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import { current } from "@reduxjs/toolkit";
 import React, { useEffect, useRef, useState } from "react"
@@ -503,5 +503,79 @@ export const useInfinityCanvas = () => {
         }
     }
 
+    const finalizeDrawing = (): void => {
+        if(!isDrawingRef.current)
+            return
 
+        isDrawingRef.current = false
+
+        if(freehandRafRef.current) {
+            window.cancelAnimationFrame(freehandRafRef.current)
+            freehandRafRef.current = null
+        }
+
+        const draft = draftShapeRef.current
+        const draft = draftShapeRef.current
+        if(draft) {
+            const x = Math.min(draft.startWorld.x, draft.startWorld.x)
+            const y = Math.min(draft.startWorld.y, draft.startWorld.y)
+            const w = Math.abs(draft.currentWorld.x - draft.startWorld.x)
+            const h = Math.abs(draft.currentWorld.y - draft.startWorld.y)
+            if(w > 1 && h > 1) {
+                if(draft.type === 'frame') {
+                    console.log('Adding frame shape:', {x, y, w, h})
+                    dispatch(addFrame({x, y, w, h}))
+                } else if (draft.type === 'rect') {
+                    dispatch(addRect({x, y, w, h}))
+                } else if (draft.type === 'ellipse') {
+                    dispatch(addEllipse({x, y, w, h}))
+                } else if (draft.type === 'arrow') {
+                    dispatch(addArrow({
+                        startX: draft.startWorld.x,
+                        startY: draft.startWorld.y,
+                        endX: draft.currentWorld.x,
+                        endY: draft.currentWorld.y
+                    })
+                )
+                } else if (draft.type === 'line') {
+                    dispatch(addLine({
+                        startX: draft.startWorld.x,
+                        startY: draft.startWorld.y,
+                        endX: draft.currentWorld.x,
+                        endY: draft.currentWorld.y
+                    })
+                )
+                }
+            }
+            draftShapeRef.current = null
+        } else if (currentTool === 'freedraw') {
+            const pts = freeDrawPointsRef.current
+            if(pts.length > 1)
+                dispatch(addFreeDrawShape({points: pts}))
+            freeDrawPointsRef.current = []
+        }
+
+        requestRender()
+    }
+
+    const onPointerUp: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        canvasRef.current?.releasePointerCapture?.(e.pointerId)
+
+        if(viewport.mode === 'panning' || viewport.mode === 'shiftPanning') {
+            dispatch(panEnd())
+        }
+
+        if(isMovingRef.current) {
+            isMovingRef.current = false
+            moveStartRef.current = null
+            initialShapePositionsRef.current = {}
+        }
+
+        if(isErasingRef.current) {
+            isErasingRef.current = false
+            erasedShapesRef.current.clear()
+        }
+
+        finalizeDrawing()
+    }
 }
