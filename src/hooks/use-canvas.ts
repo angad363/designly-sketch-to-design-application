@@ -1,10 +1,10 @@
 'use client';
 
-import { addText, clearSelection, removeShape, selectShape, setTool, Shape } from "@/redux/slice/shapes"
+import { addText, clearSelection, removeShape, selectShape, setTool, Shape, updateShape } from "@/redux/slice/shapes"
 import { panMove, Point, wheelZoom, wheelPan, screenToWorld, panStart } from "@/redux/slice/viewport"
 import { AppDispatch, useAppSelector } from "@/redux/store"
 import { current } from "@reduxjs/toolkit";
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useDispatch } from "react-redux"
 
 interface TouchPointer {
@@ -397,6 +397,108 @@ export const useInfinityCanvas = () => {
                         requestRender()
                     }
                 }
+            }
+        }
+    }
+
+    const onPointerMove: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        const local = getLocalPointFromPt(e.nativeEvent)
+        const world = screenToWorld(local, viewport.translate, viewport.scale)
+
+        if(viewport.mode === 'panning' || viewport.mode === 'shiftPanning') {
+            schedulePanMove(local)
+            return
+        }
+        if(isErasingRef.current && currentTool === 'eraser') {
+            const hitShape = getShapesAtPoint(world)
+            if(hitShape && !erasedShapesRef.current.has(hitShape.id)) {
+                dispatch(removeShape(hitShape.id))
+                erasedShapesRef.current.add(hitShape.id)
+            }
+        }
+
+        if (
+            isMovingRef.current &&
+            moveStartRef.current &&
+            currentTool === 'select'
+        ) {
+            const deltaX = world.x - moveStartRef.current.x
+            const deltaY = world.y - moveStartRef.current.y
+
+            Object.keys(initialShapePositionsRef.current).forEach((id) => {
+                const initialPos = initialShapePositionsRef.current[id]
+                const shape = entityState.entities[id]
+
+                if(shape && initialPos) {
+                    if(
+                        shape.type === 'frame' ||
+                        shape.type === 'rect' ||
+                        shape.type === 'ellipse' ||
+                        shape.type === 'text' ||
+                        shape.type === 'generatedui'
+                    ) {
+                        if(
+                            typeof initialPos.x === 'number' &&
+                            typeof initialPos.y === 'number'
+                        ) {
+                            dispatch(
+                                updateShape({
+                                    id,
+                                    patch: {
+                                        x: initialPos.x + deltaX,
+                                        y: initialPos.y + deltaY,
+                                    },
+                                })
+                            )
+                        }
+                    }
+
+                    else if (shape.type === 'freedraw') {
+                        const initialPoints = initialPos.points
+                        if(initialPoints) {
+                            const newPoints = initialPoints.map((point) => ({
+                                x: point.x + deltaX,
+                                y: point.y + deltaY
+                            }))
+                            dispatch(
+                                updateShape({
+                                    id,
+                                    patch: {
+                                        points: newPoints
+                                    }
+                                })
+                            )
+                        }
+                    } else if (shape.type === 'arrow' || shape.type === 'line') {
+                        if (
+                            typeof initialPos.startX === 'number' &&
+                            typeof initialPos.startY === 'number' &&
+                            typeof initialPos.endX === 'number' &&
+                            typeof initialPos.endY === 'number'
+                        ) {
+                            dispatch(
+                                updateShape({
+                                    id,
+                                    patch: {
+                                        startX: initialPos.startX + deltaX,
+                                        startY: initialPos.startY + deltaY,
+                                        endX: initialPos.endX + deltaX,
+                                        endY: initialPos.endY + deltaY
+                                    }
+                                })
+                            )
+                        }
+                    }
+                }
+            })
+        }
+
+        if(isDrawingRef.current) {
+            if(draftShapeRef.current) {
+                draftShapeRef.current.currentWorld = world
+                requestRender()
+            } else if (currentTool === 'freedraw') {
+                freeDrawPointsRef.current.push(world)
             }
         }
     }
