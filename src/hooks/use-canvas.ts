@@ -1,6 +1,9 @@
-import { Shape } from "@/redux/slice/shapes"
-import { panMove, Point } from "@/redux/slice/viewport"
+'use client';
+
+import { addText, clearSelection, removeShape, selectShape, setTool, Shape } from "@/redux/slice/shapes"
+import { panMove, Point, wheelZoom, wheelPan, screenToWorld, panStart } from "@/redux/slice/viewport"
 import { AppDispatch, useAppSelector } from "@/redux/store"
+import { current } from "@reduxjs/toolkit";
 import { useEffect, useRef, useState } from "react"
 import { useDispatch } from "react-redux"
 
@@ -18,7 +21,7 @@ interface DraftShape {
 
 export const useInfinityCanvas = () => {
     const dispatch = useDispatch<AppDispatch>()
-    const viewport = useAppSelector((s) => s.viewPort())
+    const viewport = useAppSelector((s) => s.viewPort)
     const entityState = useAppSelector((s) => s.shapes.shapes)
 
     const shapeList: Shape[] = entityState.ids
@@ -69,7 +72,7 @@ export const useInfinityCanvas = () => {
         >
     >({})
 
-    const isErasing = useRef(false)
+    const isErasingRef = useRef(false)
     const erasedShapesRef = useRef<Set<string>>(new Set())
     const isResizingRef = useRef(false)
     const resizeDatRef = useRef<{
@@ -229,6 +232,172 @@ export const useInfinityCanvas = () => {
 
         if(isDrawingRef.current) {
             freehandRafRef.current = window.requestAnimationFrame(freehandTick)
+        }
+    }
+
+    const onWheel = (e: WheelEvent) => {
+       e.preventDefault()
+       const originScreen = localPointFromClient(e.clientX, e.clientY)
+       if(e.ctrlKey || e.metaKey) {
+            dispatch(wheelZoom({deltaY: e.deltaY, originScreen}))
+       }
+       else {
+        const dx = e.shiftKey ? e.deltaY : e.deltaX
+        const dy = e.shiftKey ? 0 : e.deltaY
+        dispatch(wheelPan({dx: -dx, dy: -dy}))
+       }
+    }
+
+    const onPointerDown: React.PointerEventHandler<HTMLDivElement> = (e) => {
+        const target = e.target as HTMLElement
+        const isButton =
+            target.tagName === 'BUTTON' ||
+            target.closest('button') ||
+            target.classList.contains('pointer-events-auto') ||
+            target.closest('.pointer-events-auto')
+
+        if(!isButton) {
+            e.preventDefault()
+        } else {
+            console.log(
+                'Not preventing default - clicked on interactive element:',
+                target
+            )
+            return
+        }
+
+        const local = getLocalPointFromPt(e.nativeEvent)
+        const world = screenToWorld(local, viewport.translate, viewport.scale)
+
+        if(touchMapRef.current.size <= 1) {
+            canvasRef.current?.setPointerCapture?.(e.pointerId)
+            const isPanButton = e.button === 1 || e.button === 2
+            const panByShift = isSpacePressed.current && e.button === 0
+
+            if(isPanButton || panByShift) {
+                const mode = isSpacePressed.current ? 'shiftPanning' : 'panning'
+                dispatch(panStart({screen: local, mode}))
+                return
+            }
+
+            if(e.button === 0) {
+                if(currentTool === 'select') {
+                    const hitShape = getShapesAtPoint(world)
+
+                    if(hitShape) {
+                        const isAlreadySelected = selectedShapes[hitShape.id]
+                        if(!isAlreadySelected) {
+                            if(!e.shiftKey)
+                                dispatch(clearSelection())
+                            dispatch(selectShape(hitShape.id))
+                        }
+                        isMovingRef.current = true
+                        moveStartRef.current = world
+
+                        initialShapePositionsRef.current = {}
+                        Object.keys(selectedShapes).forEach((id) => {
+                            const shape = entityState.entities[id]
+                            if(shape) {
+                                if(
+                                    shape.type === 'frame' ||
+                                    shape.type === 'rect' ||
+                                    shape.type === 'ellipse' ||
+                                    shape.type === 'generatedui'
+                                ) {
+                                    initialShapePositionsRef.current[id] = {
+                                        x: shape.x,
+                                        y: shape.y
+                                    }
+                                } else if (shape.type === 'freedraw') {
+                                    initialShapePositionsRef.current[id] = {
+                                        points: [...shape.points],
+                                    }
+                                } else if (shape.type === 'arrow' || shape.type === 'line') {
+                                    initialShapePositionsRef.current[id] = {
+                                        startX: shape.startX,
+                                        startY: shape.startY,
+                                        endX: shape.endX,
+                                        endY: shape.endY
+                                    }
+                                } else if (shape.type === 'text') {
+                                    initialShapePositionsRef.current[id] = {
+                                        x: shape.x,
+                                        y: shape.y,
+                                    }
+                                }
+                            }
+                        })
+
+                        if(
+                            hitShape.type === 'frame' ||
+                            hitShape.type === 'rect' ||
+                            hitShape.type === 'ellipse' ||
+                            hitShape.type === 'generatedui'
+                        ) {
+                            initialShapePositionsRef.current[hitShape.id] = {
+                                x: hitShape.x,
+                                y: hitShape.y,
+                            }
+                        } else if (hitShape.type === 'freedraw') {
+                            initialShapePositionsRef.current[hitShape.id] = {
+                                points: [...hitShape.points],
+                            }
+                        } else if (hitShape.type === 'arrow' || hitShape.type === 'line') {
+                            initialShapePositionsRef.current[hitShape.id] = {
+                                startX: hitShape.startX,
+                                startY: hitShape.startY,
+                                endX: hitShape.endX,
+                                endY: hitShape.endY
+                            }
+                        } else if (hitShape.type === 'text') {
+                            initialShapePositionsRef.current[hitShape.id] = {
+                                x: hitShape.x,
+                                y: hitShape.y
+                            }
+                        }
+                    } else {
+                        if(!e.shiftKey) {
+                            dispatch(clearSelection())
+                            blurActiveTextInput()
+                        }
+                    }
+                } else if (currentTool === 'eraser') {
+                    isErasingRef.current = true
+                    erasedShapesRef.current.clear()
+                    const hitShape = getShapesAtPoint(world)
+                    if(hitShape) {
+                        dispatch(removeShape(hitShape.id))
+                        erasedShapesRef.current.add(hitShape.id)
+                    } else {
+                        blurActiveTextInput()
+                    }
+                } else if (currentTool == 'text') {
+                    dispatch(addText({x: world.x, y: world.y}))
+                    dispatch(setTool('select'))
+                } else {
+                    isDrawingRef.current = true
+                    if(
+                        currentTool == 'frame' ||
+                        currentTool == 'rect' ||
+                        currentTool == 'ellipse' ||
+                        currentTool == 'arrow' ||
+                        currentTool == 'line'
+                    ) {
+                        console.log('Starting to draw:', currentTool, 'at:', world)
+                        draftShapeRef.current = {
+                            type: currentTool,
+                            startWorld: world,
+                            currentWorld: world,
+                        }
+                        requestRender()
+                    } else if (currentTool == 'freedraw') {
+                        freeDrawPointsRef.current = [world]
+                        lastFreehandFrameRef.current = performance.now()
+                        freehandRafRef.current = window.requestAnimationFrame(freehandTick)
+                        requestRender()
+                    }
+                }
+            }
         }
     }
 

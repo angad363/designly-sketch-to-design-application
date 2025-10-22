@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@/components/ui/button'
 import { useInfinityCanvas } from '@/hooks/use-canvas'
 import { setScale } from '@/redux/slice/viewport'
