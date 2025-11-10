@@ -1,7 +1,7 @@
 'use client';
 
-import { addProject, createProjectFailure, createProjectStart, createProjectSuccess } from "@/redux/api/slice/projects";
-import { useAppDispatch, useAppSelector } from "@/redux/api/store";
+import { addProject, createProjectFailure, createProjectStart, createProjectSuccess } from "@/redux/slice/projects";
+import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { fetchMutation } from "convex/nextjs";
 import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";

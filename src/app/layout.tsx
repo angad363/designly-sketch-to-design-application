@@ -1,22 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/theme/provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/convex/provider";
-import ReduxProvider from "@/redux/api/provider";
+import ReduxProvider from "@/redux/provider";
 import { ProfileQuery } from "@/convex/query.config";
 import { ConvexUserRaw, normalizeProfile } from "@/types/user";
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
 export const metadata: Metadata = {

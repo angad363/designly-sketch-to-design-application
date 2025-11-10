@@ -1,6 +1,6 @@
 import {combineReducers, configureStore, Middleware, ReducersMapObject} from '@reduxjs/toolkit'
 import {slices} from './slice'
-import { apis } from '.'
+import { apis } from './api'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 export type RootState = ReturnType<typeof rootReducer>
