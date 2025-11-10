@@ -515,7 +515,7 @@ export const useInfinityCanvas = () => {
         }
 
         const draft = draftShapeRef.current
-        const draft = draftShapeRef.current
+        // const draft = draftShapeRef.current
         if(draft) {
             const x = Math.min(draft.startWorld.x, draft.startWorld.x)
             const y = Math.min(draft.startWorld.y, draft.startWorld.y)
@@ -598,4 +598,19 @@ export const useInfinityCanvas = () => {
             dispatch(handToolDisable())
         }
     }
+
+    useEffect(() => {
+        document.addEventListener('keydown', onKeyDown)
+        document.addEventListener('keyup', onKeyUp)
+        return () => {
+            document.removeEventListener('keydown', onKeyDown)
+            document.removeEventListener('keyup', onKeyUp)
+            if(freehandRafRef.current)
+                window.cancelAnimationFrame(freehandRafRef.current)
+            if(panRafRef.current)
+                window.cancelAnimationFrame(panRafRef.current)
+        }
+    }, [])
+
+
 }
